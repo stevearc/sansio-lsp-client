@@ -9,6 +9,7 @@ from .events import (
     Initialized,
     Completion,
     ServerRequest,
+    ServerResponse,
     Shutdown,
     PublishDiagnostics,
     Event,
@@ -266,23 +267,19 @@ class Client:
                 event = Hover.parse_obj(response.result)
             else:
                 event = Hover(contents=[])  # null response
-            event.message_id = response.id
 
         elif request.method == "textDocument/signatureHelp":
             if response.result is not None:
                 event = SignatureHelp.parse_obj(response.result)
             else:
                 event = SignatureHelp(signatures=[])  # null response
-            event.message_id = response.id
 
         elif request.method == "textDocument/documentSymbol":
             event = parse_obj_as(MDocumentSymbols, response)
-            event.message_id = response.id
 
         # GOTOs
         elif request.method == "textDocument/definition":
             event = parse_obj_as(Definition, response)
-            event.message_id = response.id
 
         elif request.method == "textDocument/references":
             event = parse_obj_as(References, response)
@@ -301,7 +298,6 @@ class Client:
             or request.method == "textDocument/rangeFormatting"
         ):
             event = parse_obj_as(DocumentFormatting, response)
-            event.message_id = response.id
 
         # WORKSPACE
         elif request.method == "workspace/symbol":
@@ -310,6 +306,8 @@ class Client:
         else:
             raise NotImplementedError((response, request))
 
+        if isinstance(event, ServerResponse):
+            event.message_id = response.id
         return event
 
     # request from server

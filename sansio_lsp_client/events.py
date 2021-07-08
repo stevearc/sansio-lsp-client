@@ -39,8 +39,11 @@ class Event(BaseModel):
     pass
 
 
-class ResponseError(Event):
+class ServerResponse(Event):
     message_id: t.Optional[Id]
+
+
+class ResponseError(ServerResponse):
     code: int
     message: str
     data: t.Optional[t.Union[str, int, float, bool, t.List[t.Any], JSONDict, None]]
@@ -119,8 +122,7 @@ class WorkDoneProgressEnd(WorkDoneProgress):
 
 
 # XXX: should these two be just Events or?
-class Completion(Event):
-    message_id: Id
+class Completion(ServerResponse):
     completion_list: t.Optional[CompletionList]
 
 
@@ -134,8 +136,7 @@ class PublishDiagnostics(ServerNotification):
     diagnostics: t.List[Diagnostic]
 
 
-class Hover(Event):
-    message_id: t.Optional[Id]  # custom...
+class Hover(ServerResponse):
     contents: t.Union[
         t.List[t.Union[MarkedString, str]],
         MarkedString,  # .language, .value
@@ -145,8 +146,7 @@ class Hover(Event):
     range: t.Optional[Range]
 
 
-class SignatureHelp(Event):
-    message_id: t.Optional[Id]  # custom...
+class SignatureHelp(ServerResponse):
     signatures: t.List[SignatureInformation]
     activeSignature: t.Optional[int]
     activeParameter: t.Optional[int]
@@ -159,13 +159,12 @@ class SignatureHelp(Event):
         return sig.label
 
 
-class Definition(Event):
-    message_id: t.Optional[Id]
+class Definition(ServerResponse):
     result: t.Union[Location, t.List[t.Union[Location, LocationLink]], None]
 
 
 # result is a list, so putting in a custom class
-class References(Event):
+class References(ServerResponse):
     result: t.Union[t.List[Location], None]
 
 
@@ -173,24 +172,23 @@ class MCallHierarchItems(Event):
     result: t.Union[t.List[CallHierarchyItem], None]
 
 
-class Implementation(Event):
+class Implementation(ServerResponse):
     result: t.Union[Location, t.List[t.Union[Location, LocationLink]], None]
 
 
-class MWorkspaceSymbols(Event):
+class MWorkspaceSymbols(ServerResponse):
     result: t.Union[t.List[SymbolInformation], None]
 
 
-class MDocumentSymbols(Event):
-    message_id: t.Optional[Id]
+class MDocumentSymbols(ServerResponse):
     result: t.Union[t.List[SymbolInformation], t.List[DocumentSymbol], None]
 
 
-class Declaration(Event):
+class Declaration(ServerResponse):
     result: t.Union[Location, t.List[t.Union[Location, LocationLink]], None]
 
 
-class TypeDefinition(Event):
+class TypeDefinition(ServerResponse):
     result: t.Union[Location, t.List[t.Union[Location, LocationLink]], None]
 
 
@@ -201,8 +199,7 @@ class RegisterCapabilityRequest(ServerRequest):
         self._client._send_response(id=self._id, result={})
 
 
-class DocumentFormatting(Event):
-    message_id: t.Optional[Id]
+class DocumentFormatting(ServerResponse):
     result: t.Union[t.List[TextEdit], None]
 
 
