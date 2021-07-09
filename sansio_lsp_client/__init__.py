@@ -3,5 +3,6 @@
 from .client import *
 from .events import *
 from .structs import *
+from .util import *
 
 __version__ = "0.9.0"
