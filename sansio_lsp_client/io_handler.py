@@ -4,7 +4,7 @@ import typing as t
 
 from pydantic import parse_obj_as
 
-from .structs import Request, Response, JSONDict
+from .structs import Request, Response, JSONDict, Id
 
 
 def _encode_enums(enum):
@@ -50,7 +50,7 @@ def _make_request(
 
 
 def _make_response(
-    id: int,
+    id: Id,
     result: t.Optional[JSONDict] = None,
     error: t.Optional[JSONDict] = None,
     *,
@@ -60,7 +60,7 @@ def _make_response(
 
     # Set up the actual JSONRPC content and encode it.
     content: JSONDict = {"jsonrpc": "2.0", "id": id}
-    if result is not None:
+    if result is not None or error is None:
         content["result"] = result
     if error is not None:
         content["error"] = error

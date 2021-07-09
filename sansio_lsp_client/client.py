@@ -216,7 +216,7 @@ class Client:
 
     def _send_response(
         self,
-        id: int,
+        id: Id,
         result: t.Optional[JSONDict] = None,
         error: t.Optional[JSONDict] = None,
     ) -> None:
@@ -354,6 +354,8 @@ class Client:
             assert request.params is not None
             event = parse_request(WorkDoneProgressCreate)
             self._progress_tokens_map[request.params["token"]] = WorkDoneProgress
+            if request.id:
+                self._send_response(request.id, result=None)
             return event
 
         elif request.method == "$/progress":
