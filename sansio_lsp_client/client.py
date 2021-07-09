@@ -66,6 +66,7 @@ from .structs import (
     MWorkDoneProgressKind,
 )
 from .io_handler import _make_request, _parse_messages, _make_response
+from .util import PathDict
 
 logger = logging.getLogger(__name__)
 
@@ -147,9 +148,12 @@ class Client:
         root_uri: t.Optional[str] = None,
         workspace_folders: t.Optional[t.List[WorkspaceFolder]] = None,
         trace: str = "off",
+        settings: dict = None,
     ) -> None:
         self._state = ClientState.NOT_INITIALIZED
         self._recv_catches_and_logs_errors = True  # for tests
+
+        self.settings = PathDict(settings or {})
 
         # Used to save data as it comes in (from `recieve_bytes`) until we have
         # a full request.
@@ -317,17 +321,27 @@ class Client:
             event.message_id = response.id
         return event
 
+    def _respond_with_configuration(self, request: ConfigurationRequest):
+        result = []
+        for item in request.items:
+            if item.section:
+                value = self.settings.get(item.section)
+                result.append(value)
+        request.reply(result)
+
     # request from server
     def _handle_request(self, request: Request) -> Event:
-        def parse_request(event_cls: t.Type[Event]) -> Event:
+        T = t.TypeVar("T", bound=Event)
+
+        def parse_request(event_cls: t.Type[T]) -> T:
+            event = parse_obj_as(event_cls, request.params)
             if issubclass(event_cls, ServerRequest):
-                event = parse_obj_as(event_cls, request.params)
                 assert request.id is not None
                 event._id = request.id
                 event._client = self
                 return event
             elif issubclass(event_cls, ServerNotification):
-                return parse_obj_as(event_cls, request.params)
+                return event
             else:
                 raise TypeError(
                     "`event_cls` must be a subclass of ServerRequest"
@@ -338,7 +352,9 @@ class Client:
             return parse_request(WorkspaceFolders)
 
         elif request.method == "workspace/configuration":
-            return parse_request(ConfigurationRequest)
+            r = parse_request(ConfigurationRequest)
+            self._respond_with_configuration(r)
+            return r
 
         elif request.method == "window/showMessage":
             return parse_request(ShowMessage)

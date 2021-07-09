@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+from collections import UserDict
 import os
 
 __all__ = ["uri_from_fname", "fname_from_uri"]
@@ -24,3 +25,20 @@ def fname_from_uri(uri: str, root: str = None) -> str:
     if root is not None:
         path = os.path.relpath(path, root)
     return path
+
+
+class PathDict(UserDict):
+    def __getitem__(self, key):
+        if key == "" and key not in self.data:
+            return self.data
+        pieces = key.split(".")
+        cur = self.data
+        for piece in pieces:
+            cur = cur[piece]
+        return cur
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except (KeyError, TypeError):
+            return default
