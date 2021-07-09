@@ -20,6 +20,8 @@ from .structs import (
     SignatureInformation,
     LocationLink,
     CallHierarchyItem,
+    ServerCapabilities,
+    ServerInfo,
     SymbolInformation,
     Registration,
     DocumentSymbol,
@@ -59,7 +61,8 @@ class ServerNotification(Event):
 
 
 class Initialized(Event):
-    capabilities: JSONDict
+    capabilities: ServerCapabilities
+    serverInfo: t.Optional[ServerInfo]
 
 
 class Shutdown(Event):

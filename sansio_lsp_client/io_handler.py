@@ -7,6 +7,10 @@ from pydantic import parse_obj_as
 from .structs import Request, Response, JSONDict
 
 
+def _encode_enums(enum):
+    return enum.value
+
+
 def _make_headers(content_length: int, encoding: str = "utf-8") -> bytes:
     headers_bytes = bytearray()
     headers = {
@@ -34,7 +38,7 @@ def _make_request(
         content["params"] = params
     if id is not None:
         content["id"] = id
-    encoded_content = json.dumps(content).encode(encoding)
+    encoded_content = json.dumps(content, default=_encode_enums).encode(encoding)
 
     # Write the headers to the request body
     request += _make_headers(content_length=len(encoded_content), encoding=encoding)
@@ -60,7 +64,7 @@ def _make_response(
         content["result"] = result
     if error is not None:
         content["error"] = error
-    encoded_content = json.dumps(content).encode(encoding)
+    encoded_content = json.dumps(content, default=_encode_enums).encode(encoding)
 
     # Write the headers to the request body
     request += _make_headers(content_length=len(encoded_content), encoding=encoding)

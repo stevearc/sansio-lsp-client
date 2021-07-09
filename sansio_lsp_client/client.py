@@ -42,12 +42,15 @@ from .events import (
 from .structs import (
     Response,
     TextDocumentPosition,
+    ClientCapabilities,
     CompletionContext,
     CompletionList,
     CompletionItemKind,
     CompletionItem,
+    MarkupKind,
     Request,
     JSONDict,
+    ServerCapabilities,
     TextDocumentItem,
     TextDocumentIdentifier,
     VersionedTextDocumentIdentifier,
@@ -76,8 +79,8 @@ class ClientState(enum.Enum):
     EXITED = enum.auto()
 
 
-CAPABILITIES = {
-    "textDocument": {
+CAPABILITIES = ClientCapabilities(
+    textDocument={
         "synchronization": {
             "didSave": True,
             #'willSaveWaitUntil': True,
@@ -92,7 +95,7 @@ CAPABILITIES = {
         },
         "hover": {
             "dynamicRegistration": True,
-            "contentFormat": ["markdown", "plaintext"],
+            "contentFormat": [MarkupKind.MARKDOWN, MarkupKind.PLAINTEXT],
         },
         "definition": {"dynamicRegistration": True, "linkSupport": True},
         "signatureHelp": {
@@ -101,7 +104,7 @@ CAPABILITIES = {
                 "parameterInformation": {
                     "labelOffsetSupport": False  # substring from label
                 },
-                "documentationFormat": ["markdown", "plaintext"],
+                "documentationFormat": [MarkupKind.MARKDOWN, MarkupKind.PLAINTEXT],
             },
         },
         "implementation": {"linkSupport": True, "dynamicRegistration": True},
@@ -117,13 +120,13 @@ CAPABILITIES = {
             "symbolKind": {"valueSet": list(SymbolKind)},
         },
     },
-    "window": {
+    window={
         "showMessage": {
             # TODO 'messageActionItem':...
         },
         "workDoneProgress": True,
     },
-    "workspace": {
+    workspace={
         "symbol": {
             "dynamicRegistration": True,
             "symbolKind": {"valueSet": list(SymbolKind)},
@@ -133,7 +136,7 @@ CAPABILITIES = {
         "configuration": True,
         "didChangeConfiguration": {"dynamicRegistration": True},
     },
-}
+)
 
 
 class Client:
@@ -158,6 +161,9 @@ class Client:
         # Keeps track of which IDs match to which unanswered requests.
         self._unanswered_requests: t.Dict[Id, Request] = {}
 
+        # The capabilities supported by the server
+        self.capabilities = ServerCapabilities()
+
         # Just a simple counter to make sure we have unique IDs. We could make
         # sure that this fits into a JSONRPC Number, seeing as Python supports
         # bignums, but I think that's an unlikely enough case that checking for
@@ -179,7 +185,7 @@ class Client:
                     else [f.dict() for f in workspace_folders]
                 ),
                 "trace": trace,
-                "capabilities": CAPABILITIES,
+                "capabilities": CAPABILITIES.dict(),
             },
         )
         self._state = ClientState.WAITING_FOR_INITIALIZED
@@ -234,6 +240,7 @@ class Client:
                 "initialized", params={}
             )  # params=None doesn't work with gopls
             event = Initialized.parse_obj(response.result)
+            self.capabilities = event.capabilities
             self._state = ClientState.NORMAL
 
         elif request.method == "shutdown":
