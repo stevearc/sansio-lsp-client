@@ -507,6 +507,17 @@ class Client:
             method="workspace/didChangeWorkspaceFolders", params=params
         )
 
+    def did_change_workspace_configuration(
+        self, settings: t.Any
+    ) -> None:
+        assert self._state == ClientState.NORMAL
+        params = {
+            'settings': settings
+        }
+        self._send_notification(
+            method="workspace/didChangeConfiguration", params=params
+        )
+
     def completion(
         self,
         text_document_position: TextDocumentPosition,
